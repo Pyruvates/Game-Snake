@@ -1,4 +1,4 @@
-# Game-Snake-
+# Game-Snake
 Classic Snake game.
 
 Controls: use LEFT, UP, RIGHT and DOWN buttons to control the snake
