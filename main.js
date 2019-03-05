@@ -1,7 +1,12 @@
 const ctx = document.getElementById('canvas').getContext('2d');
 
-const WIDTH  = +ctx.canvas.getAttribute('width');
-const HEIGHT = +ctx.canvas.getAttribute('height');
+const WidthCanvas  = +ctx.canvas.getAttribute('width');
+const HeightCanvas = +ctx.canvas.getAttribute('height');
+
+let score = document.getElementById('score');
+let highscore = document.getElementById('highscore');
+
+let intermediateScore = 0;
 
 const cell = 20;
 
@@ -11,7 +16,6 @@ const KEYS = {
 	RIGTH: 39,
 	DOWN:  40
 };
-
 
 let snake = [
 	{x: cell * 5, y: cell * 5},
@@ -27,12 +31,25 @@ const DIR = {
 };
 
 let apple = {
-	x: cell * 5,
-	y: cell * 9
+	x: Math.floor( (Math.random() * (WidthCanvas/cell)  ) ) * cell, // Math.floor(Math.random() * (max - min + 1)) + min;
+	y: Math.floor( (Math.random() * (HeightCanvas/cell) ) ) * cell
 };
 
-let direction = DIR.UP;
+let direction     = DIR.UP;
 let old_direction = direction;
+
+
+
+setInterval(gameLoop, 1000/10);
+
+window.addEventListener('keydown', onkeydown);
+
+
+
+function gameLoop () {
+	update();
+	render();	
+};
 
 function onkeydown (event) {
 	if (event.keyCode === 37) {
@@ -46,13 +63,7 @@ function onkeydown (event) {
 	};
 };
 
-function gameLoop () {
-
-	update();
-	render();
-	
-};
-
+// update of objects position and score
 function update () {
 	if (direction === DIR.LEFT && old_direction != DIR.RIGHT) {
 		old_direction = direction;
@@ -76,20 +87,22 @@ function update () {
 		
 		snake.splice( snake.length - 2, 0, { x: snake[snake.length - 2].x, y: snake[snake.length - 2].y } );		
 		respawnApple();
+	// keep score
+		intermediateScore += 10;
+		drawScore();
 	};
-
+	// overlap check: snake and tail
 	for (let i = snake.length - 1; i > 4; i -= 1) {
 		if ( overlap(snake[0], snake[i]) ) {
-			restart();
+			restartGame();
 			break;
 		};
 	};
 };
 
-// draw objects
 function render () {
-	ctx.clearRect(0, 0, WIDTH, HEIGHT);
-	drawBackground();
+	ctx.clearRect(0, 0, WidthCanvas, HeightCanvas);
+	drawCanvasBackground();
 	drawSnake();
 	drawApple();
 	drawCell();
@@ -101,87 +114,85 @@ function moveSnake (direction) {
 		y: snake[0].y + direction.dy
 	};
 
-	if (head.x >= WIDTH) {
+	if (head.x >= WidthCanvas) {
 		head.x = 0;
 	} else if (head.x < 0) {
-		head.x = WIDTH - cell;
+		head.x = WidthCanvas - cell;
 	};
 
-	if (head.y >= HEIGHT) {
+	if (head.y >= HeightCanvas) {
 		head.y = 0;
 	} else if (head.y < 0) {
-		head.y = HEIGHT - cell;
+		head.y = HeightCanvas - cell;
 	};
 
-	snake.unshift(head);
 	snake.pop();
+	snake.unshift(head);	
 };
 
 function drawSnake () {
-	ctx.fillStyle = 'green';
-	for (let i = snake.length - 1; i >= 0; i -= 1) {
+	ctx.fillStyle = '#003300';
+	ctx.fillRect(snake[0].x, snake[0].y, cell, cell);
+
+	ctx.fillStyle = '#009900';
+	for (let i = snake.length - 1; i > 0; i -= 1) {
 		ctx.fillRect(snake[i].x, snake[i].y, cell, cell);
-		//ctx.strokeStyle = 'black';
-		//ctx.strokeRect(snake[i].x, snake[i].y, cell, cell);
 	};
 };
 
 function drawApple () {
 	ctx.fillStyle = '#e60000';
 	ctx.fillRect(apple.x, apple.y, cell, cell);
-	//ctx.strokeStyle = 'black';
-	//ctx.strokeRect(apple.x, apple.y, cell, cell);
 };
 
 function drawCell () {
 	ctx.strokeStyle = 'black';
 
-	for (let i = WIDTH/cell; i >= 0; i -= 1) {
-		for (let j = HEIGHT/cell; j >= 0; j -= 1) {
+	for (let i = WidthCanvas/cell; i >= 0; i -= 1) {
+		for (let j = HeightCanvas/cell; j >= 0; j -= 1) {
 			ctx.strokeRect(i * cell, j * cell, cell, cell);
 		};
 	};
 };
 
-function drawBackground () {
+function drawCanvasBackground () {
 	ctx.fillStyle = '#cce6ff';
-	ctx.fillRect(0, 0, WIDTH, HEIGHT);
+	ctx.fillRect(0, 0, WidthCanvas, HeightCanvas);
+};
+
+function drawScore () {
+	score.innerHTML = 'Score: ' + intermediateScore;
 };
 
 function respawnApple () {
-	apple.x = Math.floor( (Math.random() * (WIDTH/cell)  ) ) * cell; // Math.floor(Math.random() * (max - min + 1)) + min;
-	apple.y = Math.floor( (Math.random() * (HEIGHT/cell) ) ) * cell;
+	apple.x = Math.floor( (Math.random() * (WidthCanvas/cell)  ) ) * cell;
+	apple.y = Math.floor( (Math.random() * (HeightCanvas/cell) ) ) * cell;
 
-	 for (let i = snake.length - 1; i >= 0; i -=1) {
+	for (let i = snake.length - 1; i >= 0; i -=1) {
 	 	if (apple.x === snake[i].x && apple.y === snake[i].y) {
 	 		apple.x = snake[snake.length - 1].x;
 	 		apple.y = snake[snake.length - 1].y;
 	 		break;
 	  };
-	 };
+	};
 };
 
-function restart () {
+function restartGame () {
 	snake = [
 		{x: cell * 5, y: cell * 5},
 		{x: cell * 5, y: cell * 6},
 		{x: cell * 5, y: cell * 7}
 	];
 
-	direction = DIR.RIGHT;
-	old_direction = direction;
-
 	respawnApple();
+	intermediateScore = 0;
+	drawScore();
 };
 
-// проверка на совпадение клеток. Например: змеи и яблока
+// overlap check. For example: snake and apple
 function overlap (obj1, obj) {
-	if (obj1.x === obj.x && obj1.y === obj.y) {
+	if (obj1.x === obj.x && obj1.y === obj.y) 
 		return true;
-	} else return false;
+	else 
+		return false;
 };
-
-setInterval(gameLoop, 1000/10);
-
-
-window.addEventListener('keydown', onkeydown);
