@@ -184,6 +184,9 @@ function restartGame () {
 		{x: cell * 5, y: cell * 7}
 	];
 
+	direction     = DIR.UP;
+	old_direction = direction;
+
 	respawnApple();
 	intermediateScore = 0;
 	drawScore();
