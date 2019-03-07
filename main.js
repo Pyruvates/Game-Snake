@@ -3,19 +3,18 @@ const ctx = document.getElementById('canvas').getContext('2d');
 const WidthCanvas  = +ctx.canvas.getAttribute('width');
 const HeightCanvas = +ctx.canvas.getAttribute('height');
 
-let score = document.getElementById('score');
-let highscore = document.getElementById('highscore');
+let scoreText = document.getElementById('score');
+let highscoreText = document.getElementById('highscore');
 
-let intermediateScore = 0;
+let score     = 0;
+// load highscore
+let highscore = localStorage['highscore'] || 0;
 
+scoreText.innerHTML = 'Score: ' + score;
+highscoreText.innerHTML = 'Highscore: ' + highscore;
+
+// cell size
 const cell = 20;
-
-const KEYS = {
-	LEFT:  37,
-	UP:    38,
-	RIGTH: 39,
-	DOWN:  40
-};
 
 let snake = [
 	{x: cell * 5, y: cell * 5},
@@ -24,10 +23,10 @@ let snake = [
 ];
 
 const DIR = {
-    UP:    {dx:   0, dy: -cell},
-    RIGHT: {dx:  cell, dy:   0},
-    DOWN:  {dx:   0, dy:  cell},
-    LEFT:  {dx: -cell, dy:   0}
+    up:    {dx:   0, dy: -cell},
+    right: {dx:  cell, dy:   0},
+    down:  {dx:   0, dy:  cell},
+    left:  {dx: -cell, dy:   0}
 };
 
 let apple = {
@@ -35,14 +34,14 @@ let apple = {
 	y: Math.floor( (Math.random() * (HeightCanvas/cell) ) ) * cell
 };
 
-let direction     = DIR.UP;
+let direction     = DIR.up;
 let old_direction = direction;
 
 
 
 setInterval(gameLoop, 1000/10);
 
-window.addEventListener('keydown', onkeydown);
+addEventListener('keydown', onKeyDown);
 
 
 
@@ -51,30 +50,30 @@ function gameLoop () {
 	render();	
 };
 
-function onkeydown (event) {
-	if (event.keyCode === 37) {
-		direction = DIR.LEFT;
+function onKeyDown (event) {
+	if (event.keyCode        === 37) {
+		direction = DIR.left;
 	} else if (event.keyCode === 38) {
-		direction = DIR.UP;
+		direction = DIR.up;
 	} else if (event.keyCode === 39) {
-		direction = DIR.RIGHT;
+		direction = DIR.right;
 	} else if (event.keyCode === 40) {
-		direction = DIR.DOWN;
+		direction = DIR.down;
 	};
 };
 
 // update of objects position and score
 function update () {
-	if (direction === DIR.LEFT && old_direction != DIR.RIGHT) {
+	if ( direction === DIR.left  && old_direction != DIR.right ) {
 		old_direction = direction;
 		moveSnake(direction);
-	} else if (direction === DIR.RIGHT && old_direction != DIR.LEFT) {
+	} else if ( direction === DIR.right && old_direction != DIR.left ) {
 		old_direction = direction;
 		moveSnake(direction);
-	} else if (direction === DIR.UP && old_direction != DIR.DOWN) {
+	} else if ( direction === DIR.up    && old_direction != DIR.down ) {
 		old_direction = direction;
 		moveSnake(direction);
-	} else if (direction === DIR.DOWN && old_direction != DIR.UP) {
+	} else if ( direction === DIR.down  && old_direction != DIR.up ) {
 		old_direction = direction;
 		moveSnake(direction);
 	} else {
@@ -83,16 +82,16 @@ function update () {
 
 	// growth snake
 	if ( overlap(snake[0], apple) ) {
-		console.log('OM-NOM-NOM!');
-		
+		console.log('OM-NOM-NOM!');		
 		snake.splice( snake.length - 2, 0, { x: snake[snake.length - 2].x, y: snake[snake.length - 2].y } );		
 		respawnApple();
-	// keep score
-		intermediateScore += 10;
-		drawScore();
+
+		// keep score
+		score += 10;
+		scoreText.innerHTML = 'Score: ' + score;
 	};
-	// overlap check: snake and tail
-	for (let i = snake.length - 1; i > 4; i -= 1) {
+	// overlap check: snake head and tail
+	for (let i = snake.length - 1; i > 3; i -= 1) {
 		if ( overlap(snake[0], snake[i]) ) {
 			restartGame();
 			break;
@@ -105,7 +104,7 @@ function render () {
 	drawCanvasBackground();
 	drawSnake();
 	drawApple();
-	drawCell();
+	drawNet();
 };
 
 function moveSnake (direction) {
@@ -115,19 +114,25 @@ function moveSnake (direction) {
 	};
 
 	if (head.x >= WidthCanvas) {
-		head.x = 0;
+		head.x = 0 - cell;
 	} else if (head.x < 0) {
 		head.x = WidthCanvas - cell;
 	};
 
 	if (head.y >= HeightCanvas) {
-		head.y = 0;
+		head.y = 0 - cell;
 	} else if (head.y < 0) {
 		head.y = HeightCanvas - cell;
 	};
 
 	snake.pop();
 	snake.unshift(head);	
+};
+
+// overlap check. For example: snake and apple
+function overlap (obj1, obj2) {
+	if (obj1.x === obj2.x && obj1.y === obj2.y) 
+		return true;
 };
 
 function drawSnake () {
@@ -145,9 +150,8 @@ function drawApple () {
 	ctx.fillRect(apple.x, apple.y, cell, cell);
 };
 
-function drawCell () {
+function drawNet () {
 	ctx.strokeStyle = 'black';
-
 	for (let i = WidthCanvas/cell; i >= 0; i -= 1) {
 		for (let j = HeightCanvas/cell; j >= 0; j -= 1) {
 			ctx.strokeRect(i * cell, j * cell, cell, cell);
@@ -160,16 +164,12 @@ function drawCanvasBackground () {
 	ctx.fillRect(0, 0, WidthCanvas, HeightCanvas);
 };
 
-function drawScore () {
-	score.innerHTML = 'Score: ' + intermediateScore;
-};
-
 function respawnApple () {
 	apple.x = Math.floor( (Math.random() * (WidthCanvas/cell)  ) ) * cell;
 	apple.y = Math.floor( (Math.random() * (HeightCanvas/cell) ) ) * cell;
 
 	for (let i = snake.length - 1; i >= 0; i -=1) {
-	 	if (apple.x === snake[i].x && apple.y === snake[i].y) {
+	 	if ( apple.x === snake[i].x && apple.y === snake[i].y ) {
 	 		apple.x = snake[snake.length - 1].x;
 	 		apple.y = snake[snake.length - 1].y;
 	 		break;
@@ -184,18 +184,17 @@ function restartGame () {
 		{x: cell * 5, y: cell * 7}
 	];
 
-	direction     = DIR.UP;
+	direction     = DIR.up;
 	old_direction = direction;
+	
+	// save highscore in cache
+	if (score > highscore) {
+		localStorage['highscore'] = score;
+		highscore = localStorage['highscore'];
+		highscoreText.innerHTML = 'Highscore: ' + highscore;
+	};
 
+	score = 0;
+	scoreText.innerHTML = 'Score: ' + 0;	
 	respawnApple();
-	intermediateScore = 0;
-	drawScore();
-};
-
-// overlap check. For example: snake and apple
-function overlap (obj1, obj) {
-	if (obj1.x === obj.x && obj1.y === obj.y) 
-		return true;
-	else 
-		return false;
 };
