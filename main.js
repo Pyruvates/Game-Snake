@@ -37,9 +37,7 @@ let apple = {
 let direction     = DIR.up;
 let old_direction = direction;
 
-
-
-setInterval(gameLoop, 1000/10);
+setInterval(gameLoop, 900/10);
 
 addEventListener('keydown', onKeyDown);
 
